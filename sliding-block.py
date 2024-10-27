@@ -9,15 +9,39 @@ def sliding_block_puzzle():
 	
 	initial_state = goal_state.copy()
 	r.shuffle(initial_state)
+	while (inversion_count(goal_state)-inversion_count(initial_state)%2!=0):
+		r.shuffle(initial_state)
 
 	print(str(goal_state))
+	print(inversion_count(goal_state))
 	print(str(initial_state))
+	print(inversion_count(initial_state))
 	print(str(manhatten_distance(initial_state, goal_state)))
 
 
+def inversion_count(state):
+	i_count = 0
+	
+	i_state = state.copy()
+	i_state.remove(0)
+	
+	for i in range(0, len(i_state)):
+		for j in range(0, i):
+			if i_state[j] > i_state[i]:
+				i_count += 1
+	return i_count
+
+
+def misplaced_tiles(state, goal_state):
+	tile_count = 0
+	for i in range(0, len(state)):
+		if state[i] != state[j]:
+			tile_count += 1
+	return tile_count
+
 def manhatten_distance(current_state, goal_state):
 	total_distance = 0
-	for i in range(puzzle_size):
+	for i in range(0, puzzle_size - 1):
 		if current_state[i] == 0:
 			continue
 		
