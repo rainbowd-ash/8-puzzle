@@ -1,103 +1,99 @@
 import random as r
+import argparse
+from searches import *
+from heuristics import *
 
-p_size = 9
-p_side = int(p_size / 3)
 
-
-def sliding_block_puzzle():
-	goal_state = list(range(0, p_size))
-	goal_state.append(goal_state.pop(0)) # move 0 to end of list
+def parse_args():
+	parser = argparse.ArgumentParser(description="Welcome to the sliderrrrr")
 	
-	initial_state = goal_state.copy()
-	r.shuffle(initial_state)
-	while (inversion_count(goal_state)-inversion_count(initial_state)%2!=0):
-		r.shuffle(initial_state)
+	parser.add_argument(
+		'--size',
+		type = int,
+		choices = [9, 16],
+		default = 9,
+		help = "Size of puzzle, either 9 (3x3) or 16 (4x4). Default is 9."
+	)
+	
+	parser.add_argument(
+		'--algo',
+		type = str,
+		choices=['a_star', 'best_first'],
+		default = 'a_star',
+		help="Search algorithm to use, 'a_star' or 'best_first'. Default is a_star."
+    )
+	
+	parser.add_argument(
+		'--heuristic',
+		type=str,
+		choices=['misplaced_tiles', 'manhatten_distance', 'linear_conflicts'],
+		default='manhatten_distance',
+		help="Heuristic to use for evaluation, 'misplaced_tiles', 'manhatten_distance', or 'linear_conflicts'. Default is 'manhatten_distance'."
+	)
+	
+	return parser.parse_args()
 
-	print(str(goal_state))
-	print(inversion_count(goal_state))
-	print(str(initial_state))
-	print(str(misplaced_tiles(initial_state, goal_state)))
-	print(str(manhatten_distance(initial_state, goal_state)))
-	print(str(linear_conflict(initial_state, goal_state)))
+def sliding_block_puzzle(size, algo_fn, heuristic_fn):
+	side = int(math.sqrt(size))
+	goal_state = list(range(1, size)) + [0]  # Goal state with 0 at the end
+
+	# Generate a random initial state that is solvable
+	initial_state = goal_state.copy()
+	while True:
+		r.shuffle(initial_state)
+		if is_solvable(initial_state, side):
+			break
+
+	# Run the chosen algorithm and print results
+	result = algo_fn(initial_state, goal_state, heuristic_fn)
+	print("Solution Path:", result)
+	print("Moves to Solve:", len(result))
 
 
 def inversion_count(state):
 	i_count = 0
-	
-	i_state = state.copy()
-	i_state.remove(0)
-	
-	for i in range(0, len(i_state)):
-		for j in range(0, i):
+	i_state = [tile for tile in state if tile != 0]
+
+	for i in range(len(i_state)):
+		for j in range(i):
 			if i_state[j] > i_state[i]:
 				i_count += 1
 	return i_count
 
 
-def misplaced_tiles(state, goal_state):
-	tile_count = 0
-	for i in range(0, len(state)):
-		if state[i] != goal_state[i]:
-			tile_count += 1
-	return tile_count
+def is_solvable(state, side):
+	inversions = inversion_count(state)
+	blank_row = state.index(0) // side
+
+	if side % 2 != 0:
+		return inversions % 2 == 0
+
+	return (inversions + blank_row) % 2 == 1
 
 
-def manhatten_distance(state, goal_state):
-	total_distance = 0
-	for i in range(0, p_size - 1):
-		if state[i] == 0:
-			continue
-		
-		goal_position = goal_state.index(state[i])
-		curr_row, curr_col = i // p_side, i % p_side
-		goal_row, goal_col = goal_position // p_side, goal_position % p_side
-		distance = abs(goal_row - curr_row) + abs(goal_col - curr_col)
-		total_distance += distance
-	
-	return total_distance
+if __name__ == "__main__":
+	args = parse_args()
+	print("Running Solver:")
+	print("Size:", args.size)
+	print("Algorithm:", args.algo)
+	print("Heuristic:", args.heuristic)
+	print()
 
+	algorithms = {
+		'best_first': best_first,
+		'a_star': a_star
+	}
 
-def linear_conflict(state, goal_state):
-	total_distance = manhatten_distance(state, goal_state)
-	
-	for row in range(p_side):
-		row_tiles = [state[row * p_side + col] for col in range(p_side)]
-		goal_row_tiles = [goal_state[row * p_side + col] for col in range(p_side)]
-		total_distance += count_conflicts(row_tiles, goal_row_tiles)
-	
-	for col in range(p_side):
-		col_tiles = [state[row * p_side + col] for col in range(p_side)]
-		goal_col_tiles = [goal_state[row * p_side + col] for row in range(p_side)]
-		total_distance += count_conflicts(col_tiles, goal_row_tiles)
-	
-	return total_distance
+	heuristics = {
+		'misplaced_tiles': misplaced_tiles,
+		'manhatten_distance': manhatten_distance,
+		'linear_conflicts': linear_conflicts
+	}
 
+	algo_fn = algorithms.get(args.algo)
+	heuristic_fn = heuristics.get(args.heuristic)
 
-def count_conflicts(line, goal_line):
-	conflicts = 0
-	for i in range(p_side):
-		for j in range(i + 1, p_side):
-			if line[i] in goal_line and line[j] in goal_line:
-				if goal_line.index(line[i]) > goal_line.index(line[j]):
-					conflicts += 2
-	return conflicts
-
-
-def get_possible_states(state):
-	possiblities = []
-	blank        = state.index(0)
-	row, col     = blank // 3, blank % 3
-	directions   = [(-1, 0), (1, 0), (0, -1), (0, 1)]
-	
-	for drow, dcol in directions:
-		new_row, new_col = row + drow, col + dcol
-		
-		if 0 <= new_row < 3 and 0 <= new_col < 3:
-			new_state = state.copy()
-			swap_index = new_row * 3 + new_col
-			new_state[blank], new_state[swap_index] = \
-			new_state[swap_index], new_state[blank]
-		possiblities.append(new_state)
-	return possiblities
-
-sliding_block_puzzle()
+	if not algo_fn or not heuristic_fn:
+		print("Invalid algorithm or heuristic specified!")
+	else:
+		sliding_block_puzzle(args.size, algo_fn, heuristic_fn)
