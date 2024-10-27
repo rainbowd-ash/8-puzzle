@@ -1,10 +1,11 @@
 import random as r
 
-puzzle_size = 9
+p_size = 9
+p_side = int(p_size / 3)
 
 
 def sliding_block_puzzle():
-	goal_state = list(range(0, puzzle_size))
+	goal_state = list(range(0, p_size))
 	goal_state.append(goal_state.pop(0)) # move 0 to end of list
 	
 	initial_state = goal_state.copy()
@@ -15,8 +16,9 @@ def sliding_block_puzzle():
 	print(str(goal_state))
 	print(inversion_count(goal_state))
 	print(str(initial_state))
-	print(inversion_count(initial_state))
+	print(str(misplaced_tiles(initial_state, goal_state)))
 	print(str(manhatten_distance(initial_state, goal_state)))
+	print(str(linear_conflict(initial_state, goal_state)))
 
 
 def inversion_count(state):
@@ -35,23 +37,50 @@ def inversion_count(state):
 def misplaced_tiles(state, goal_state):
 	tile_count = 0
 	for i in range(0, len(state)):
-		if state[i] != state[j]:
+		if state[i] != goal_state[i]:
 			tile_count += 1
 	return tile_count
 
-def manhatten_distance(current_state, goal_state):
+
+def manhatten_distance(state, goal_state):
 	total_distance = 0
-	for i in range(0, puzzle_size - 1):
-		if current_state[i] == 0:
+	for i in range(0, p_size - 1):
+		if state[i] == 0:
 			continue
 		
-		goal_position = goal_state.index(current_state[i])
-		curr_row, curr_col = i // 3, i % 3
-		goal_row, goal_col = goal_position // 3, goal_position % 3
+		goal_position = goal_state.index(state[i])
+		curr_row, curr_col = i // p_side, i % p_side
+		goal_row, goal_col = goal_position // p_side, goal_position % p_side
 		distance = abs(goal_row - curr_row) + abs(goal_col - curr_col)
 		total_distance += distance
 	
 	return total_distance
+
+
+def linear_conflict(state, goal_state):
+	total_distance = manhatten_distance(state, goal_state)
+	
+	for row in range(p_side):
+		row_tiles = [state[row * p_side + col] for col in range(p_side)]
+		goal_row_tiles = [goal_state[row * p_side + col] for col in range(p_side)]
+		total_distance += count_conflicts(row_tiles, goal_row_tiles)
+	
+	for col in range(p_side):
+		col_tiles = [state[row * p_side + col] for col in range(p_side)]
+		goal_col_tiles = [goal_state[row * p_side + col] for row in range(p_side)]
+		total_distance += count_conflicts(col_tiles, goal_row_tiles)
+	
+	return total_distance
+
+
+def count_conflicts(line, goal_line):
+	conflicts = 0
+	for i in range(p_side):
+		for j in range(i + 1, p_side):
+			if line[i] in goal_line and line[j] in goal_line:
+				if goal_line.index(line[i]) > goal_line.index(line[j]):
+					conflicts += 2
+	return conflicts
 
 
 def get_possible_states(state):
