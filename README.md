@@ -223,9 +223,10 @@ Average number of steps: 165.4
 5. 136
 
 ### A Star
-I don't know if it is my computer or my algorithm or both, but these tests took so long they got killed automatically, or ground my computer into dust. The assignment is due so I'm stopping here.
 
 #### Misplaced Tiles
+My computer could not handle this.
+
 Average number of steps: 
 1. 
 2. 
@@ -234,20 +235,20 @@ Average number of steps:
 5. 
 
 #### Manhatten Distance
-Average number of steps: 
-1. 
-2. 
-3. 
-4. 
-5. 
+Average number of steps: 270
+1. 60
+2. 52
+3. 50
+4. 54
+5. 54
 
 #### Linear Conflicts
-Average number of steps: 
+Average number of steps: 261
 1. 52
 2. 52
 3. 49
 4. 54
-5. 
+5. 53
 
 
 
